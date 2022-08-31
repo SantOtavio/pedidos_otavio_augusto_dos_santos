@@ -1,3 +1,4 @@
+const { verbose } = require("nodemon/lib/config/defaults");
 const crud = require("../../crud");
 const tableName = "Orders";
 
@@ -92,7 +93,69 @@ async function haveAUser(UserId) {
     return false;
 }
 
+async function ordersUpdate(data = {
+    UserId: "",
+    Status: "",
+    id: ""
+}) {
+    if (!data.UserId) {
+        return { error: "0001", message: "Its necessary fill all requisition parameters right!", necessaryFields: ["UserId"] }
+    }
+
+    if (!data.Status) {
+        return { error: "0001", message: "Its necessary fill all requisition parameters right!", necessaryFields: ["Status"] }
+    }
+
+    if (!data.id) {
+        return { error: "0001", message: "Its necessary fill all requisition parameters right!", necessaryFields: ["id"] }
+    }
+
+    if (await verifyIfIsClosed(data.id)) {
+        return { error: "0007", message: "The orders especified is already closed!", necessaryActions: ["Fill with a open order id!"] }
+    }
+
+    if(data.Status != "Closed"){
+        return { error: "0001", message: "Its necessary fill all requisition parameters right!", necessaryActions: ["You have to write 'Closed', any text different is not right!"] }
+    }
+
+    if(await verifyIfHaveProducts(data.id) != true){
+        return { error: "0008", message: "The orders especified dont have products!", necessaryActions: ["Fill with a order than have products!"] }
+    }
+
+    const orderUpdated = crud.save(tableName, data.id, data);
+    return orderUpdated;
+}
+
+async function verifyIfIsClosed(id) {
+    const ordersArr = [];
+    ordersArr.push(await crud.getById(tableName, id));
+
+    for (i = 0; i < ordersArr[0]; i++) {
+        if (ordersArr[0].Status == "Closed") {
+            return true
+        }
+    }
+
+    return false
+}
+
+async function verifyIfHaveProducts(id) {
+    const orderProductsArr = [];
+    orderProductsArr.push(await crud.get("OrderProducts"));
+
+    for(i = 0; i < orderProductsArr[0].length; i++){
+        if(orderProductsArr[0][i].OrderId == id){
+            return true
+        }
+    }
+
+    return false
+}
+
+
+
 module.exports = {
-    ordersRegister
+    ordersRegister,
+    ordersUpdate
 }
 
