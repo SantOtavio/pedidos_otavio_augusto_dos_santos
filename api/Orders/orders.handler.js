@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-const { async } = require("@firebase/util");
-=======
-const { verbose } = require("nodemon/lib/config/defaults");
->>>>>>> 326d4ebe1251b776b7d9653b7f9c799ae4e99ad8
 const crud = require("../../crud");
 const tableName = "Orders";
 
@@ -10,7 +5,6 @@ async function ordersRegister(data = {
     UserId: "",
     Status: ""
 }) {
-    console.log("handler: ", data);
     if (!data.UserId) {
         return { error: "0001", message: "Its necessary fill all requisition parameters right!", necessaryFields: ["UserId"] }
     }
@@ -34,10 +28,10 @@ async function ordersRegister(data = {
 
     let Number = 0;
 
-    if (ordersArr[0].length > 0) {
-        Number = ordersArr[0][ordersArr[0].length - 1].Number + 1;
-    } else {
+    if (ordersArr[0].length == 0) {
         Number = 1;
+    } else {
+        Number = ordersArr[0][ordersArr[0].length - 1].Number + 1;
     }
 
     data = {
@@ -45,8 +39,6 @@ async function ordersRegister(data = {
         Status: data.Status,
         Number: Number
     }
-
-    console.log(data);
 
     const order = await crud.save(tableName, undefined, data);
     return (order);
@@ -99,7 +91,7 @@ async function haveAUser(UserId) {
     return false;
 }
 
-<<<<<<< HEAD
+
 async function ordersIsClosed(id) {
     const order = await crud.get(tableName, id);
     if (order.Status == 'Closed') {
@@ -137,64 +129,28 @@ async function ordersClose(id, data = {
     Status: "",
     UserId: ""
 }) {
-=======
-async function ordersUpdate(data = {
-    UserId: "",
-    Status: "",
-    id: ""
-}) {
-    if (!data.UserId) {
-        return { error: "0001", message: "Its necessary fill all requisition parameters right!", necessaryFields: ["UserId"] }
-    }
-
->>>>>>> 326d4ebe1251b776b7d9653b7f9c799ae4e99ad8
-    if (!data.Status) {
-        return { error: "0001", message: "Its necessary fill all requisition parameters right!", necessaryFields: ["Status"] }
-    }
-
-<<<<<<< HEAD
-    if (data.Status != 'Closed') {
-        return { error: "0002", message: "The status must be Closed!", necessaryAction: ["Fill with a valid status!"] }
-    }
-
     if (await ordersIsClosed(id) == true) {
         return { error: "0002", message: "The order is already closed!", necessaryAction: ["Open the order!"] }
     }
 
     if (await orderHaveProducts(id) != true) {
-        return { error: "0003", message: "The order have no products!", necessaryAction: ["Add products to the order!"] }
+        return { error: "0005", message: "The order dont have products!", necessaryAction: ["Add products to the order!"] }
     }
 
+    if (data.Status != 'Closed') {
+        return { error: "0002", message: "The status must be Closed!", necessaryAction: ["Fill with a valid status!"] }
+    }
+    if (await ordersIsClosed(id) == true) {
+        return { error: "0002", message: "The order is already closed!", necessaryAction: ["Open the order!"] }
+    }
+    if (await orderHaveProducts(id) != true) {
+        return { error: "0003", message: "The order have no products!", necessaryAction: ["Add products to the order!"] }
+    }
     data.Number = await findNumber(id);
     data.UserId = await findUserId(id);
-
     return await crud.update(tableName, id, data);
 }
 
-
-module.exports = {
-    ordersRegister,
-    ordersClose
-=======
-    if (!data.id) {
-        return { error: "0001", message: "Its necessary fill all requisition parameters right!", necessaryFields: ["id"] }
-    }
-
-    if (await verifyIfIsClosed(data.id)) {
-        return { error: "0007", message: "The orders especified is already closed!", necessaryActions: ["Fill with a open order id!"] }
-    }
-
-    if(data.Status != "Closed"){
-        return { error: "0001", message: "Its necessary fill all requisition parameters right!", necessaryActions: ["You have to write 'Closed', any text different is not right!"] }
-    }
-
-    if(await verifyIfHaveProducts(data.id) != true){
-        return { error: "0008", message: "The orders especified dont have products!", necessaryActions: ["Fill with a order than have products!"] }
-    }
-
-    const orderUpdated = crud.save(tableName, data.id, data);
-    return orderUpdated;
-}
 
 async function verifyIfIsClosed(id) {
     const ordersArr = [];
@@ -226,7 +182,6 @@ async function verifyIfHaveProducts(id) {
 
 module.exports = {
     ordersRegister,
-    ordersUpdate
->>>>>>> 326d4ebe1251b776b7d9653b7f9c799ae4e99ad8
+    ordersClose
 }
 

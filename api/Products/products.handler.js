@@ -19,7 +19,6 @@ async function productsRegister(data = {
     Name: "",
     Price: 0
 }) {
-    console.log("handler: ", data);
     if (!data.Name) {
         return { error: "0001", message: "Its necessary fill all requisition parameters right!", necessaryFields: ["Name"] }
     }

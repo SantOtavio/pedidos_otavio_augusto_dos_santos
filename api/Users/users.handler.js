@@ -23,7 +23,6 @@ async function userRegister(data = {
     Name: "",
     Surname: ""
 }) {
-    console.log("handler: ", data);
     if (!data.CPF) {
         return { error: "0001", message: "Its necessary fill all requisition parameters!", necessaryFields: ["CPF"] }
     }
