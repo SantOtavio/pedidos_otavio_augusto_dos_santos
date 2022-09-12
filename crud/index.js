@@ -103,6 +103,15 @@ async function getWithFilter(tablename, property, operator, value){
     return lista;
 }
 
+async function update(tablename, id, data) {
+    const referenceEntity = await setDoc(doc(db, tablename, id), data);
+    const savedData = {
+        ...data,
+        id: id
+    }
+    return savedData;
+}
+
 
 
 
@@ -111,5 +120,6 @@ module.exports = {
     get,
     getById,
     remove,
-    getWithFilter
+    getWithFilter,
+    update
 }

@@ -7,6 +7,7 @@ async function orderProductsRegister(data = {
     OrderId: ""
 }) {
     let id_IfIsEqualAnother = 0;
+
     if (!data.ProductId) {
         return { error: "0001", message: "Its necessary fill all requisition parameters!", necessaryFields: ["ProductId"] }
     }
@@ -24,22 +25,36 @@ async function orderProductsRegister(data = {
     }
 
     if (await verifyIfOrderIsOpen(data.OrderId) != true) {
-        return { error: "0006", message: "The order especified is closed!", necessaryActions: ["Fill with a open order!"] }
+        return { error: "0006", message: "The order especified is closed!", necessaryActions: ["Fill with a valid order id!"] }
     }
 
-    if (await verifyIfHaveAnEqualProduct(data.ProductId) != false) {
-        let testObjet = await verifyIfHaveAnEqualProduct(data.ProductId);
-        data.Quantity = testObjet.quantity + data.Quantity
-        id_IfIsEqualAnother = testObjet.id;
+    if (await verifySameProduct(data.ProductId, data.OrderId) != true) {
+        if (await verifyIfHaveAnEqualProduct(data.ProductId) != false) {
+            let testObjet = await verifyIfHaveAnEqualProduct(data.ProductId);
+            data.Quantity = testObjet.quantity + data.Quantity
+            id_IfIsEqualAnother = testObjet.id;
+        }
     }
 
-    if (id_IfIsEqualAnother > 0) {
-        const orderProduct = await crud.save(tableName, id_IfIsEqualAnother, data);
+    if (id_IfIsEqualAnother != 0) {
+        const orderProduct = await crud.update(tableName, id_IfIsEqualAnother, data);
         return (orderProduct);
     } else {
-        const orderProduct = await crud.save(tableName, undefined, data);
-        return (orderProduct);
+        return (await crud.save(tableName, undefined, data));
     }
+}
+
+async function verifySameProduct(ProductId, OrderId) {
+    const orderProductsArr = [];
+    orderProductsArr.push(await crud.get("OrderProducts"));
+
+    for (i = 0; i < orderProductsArr[0].length; i++) {
+        if (orderProductsArr[0][i].ProductId == ProductId && orderProductsArr[0][i].OrderId != OrderId) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 async function verifyOrder(OrderId) {
@@ -76,14 +91,58 @@ async function verifyIfHaveAnEqualProduct(ProductId) {
 
     for (i = 0; i < orderProductsArr[0].length; i++) {
         if (orderProductsArr[0][i].ProductId == ProductId) {
-            return { quantity: orderProductsArr[0][i].Quantity, id: orderProductsArr[0][i].id }
+            return { id: orderProductsArr[0][i].id, quantity: orderProductsArr[0][i].Quantity };
         }
     }
 
-    return false
+    return false;
+}
+
+async function getOrderId(id) {
+    const orderProductsArr = [];
+    orderProductsArr.push(await crud.get("OrderProducts"));
+
+    for (i = 0; i < orderProductsArr[0].length; i++) {
+        if (orderProductsArr[0][i].id == id) {
+            return orderProductsArr[0][i].OrderId;
+        }
+    }
+}
+
+async function orderProductsRemove(id, data = {
+    Quantity: 0
+}) {
+    if (data.Quantity == 0 || data.Quantity < 0 || data.Quantity == undefined || data.Quantity == null) {
+        return { error: "0001", message: "Its necessary fill all requisition parameters!", necessaryFields: ["Quantity"] }
+    }
+
+    if (id == undefined || id == null || id == "") {
+        return { error: "0001", message: "Its necessary fill all requisition parameters!", necessaryFields: ["id"] }
+    }
+
+    if (await verifyIfOrderIsOpen(await getOrderId(id)) != true) {
+        return { error: "0006", message: "The order especified is closed!", necessaryActions: ["Fill with a open order!"] }
+    }
+
+    const orderProductsArr = [];
+    orderProductsArr.push(await crud.get("OrderProducts"));
+
+    for (i = 0; i < orderProductsArr[0].length; i++) {
+        if (orderProductsArr[0][i].id == id) {
+            if (orderProductsArr[0][i].Quantity > data.Quantity) {
+                orderProductsArr[0][i].Quantity = orderProductsArr[0][i].Quantity - data.Quantity;
+                const orderProduct = await crud.save("OrderProducts", id, orderProductsArr[0][i]);
+                return (orderProduct);
+            } else {
+                const orderProduct = await crud.remove("OrderProducts", id);
+                return (orderProduct);
+            }
+        }
+    }
 }
 
 module.exports = {
-    orderProductsRegister
+    orderProductsRegister,
+    orderProductsRemove
 }
 
